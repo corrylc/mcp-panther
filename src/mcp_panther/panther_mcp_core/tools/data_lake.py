@@ -154,7 +154,13 @@ async def execute_data_lake_query(
         )
     ] = 30,
 ) -> Dict[str, Any]:
-    """Execute custom SQL queries against Panther's data lake for advanced data analysis and aggregation. This tool requires a p_event_time filter condition and should only be called five times per user request. For simple log sampling, use get_sample_log_events instead. The query must follow Snowflake SQL syntax (e.g., use field:nested_field instead of field.nested_field).
+    """Execute custom SQL queries against Panther's data lake for advanced data analysis and aggregation.
+
+    All queries MUST:
+    * Conform to Snowflake's SQL syntax.
+    * Contain a filter on `p_event_time`.
+
+    Guidance:
 
     For efficiency, when checking for values in an array, use the snowflake function `ARRAY_CONTAINS( <value_expr> , <array> )`.
 
@@ -594,8 +600,14 @@ async def get_sample_log_events(
             examples=["Panther.Audit"],
         ),
     ],
+    limit: Annotated[
+        int,
+        Field(
+            description="The maximum number of events to return",
+        )
+    ] = 10
 ) -> Dict[str, Any]:
-    """Get a sample of 10 log events for a specific log type from the panther_logs database.
+    """Get a sample of log events for a specific log type from the panther_logs database.
 
     The log_type input corresponds to the `logType` field in `list_database_tables` output.
 
@@ -603,6 +615,8 @@ async def get_sample_log_events(
 
     This function constructs a SQL query to fetch recent sample events and executes it against
     the data lake. The query automatically filters events from the last 7 days to ensure quick results.
+
+    Results are not ordered, and are not a statistical sample.
 
     Example usage:
         # Step 1: Get query_id for sample events
@@ -636,7 +650,7 @@ async def get_sample_log_events(
         SELECT *
         FROM {database_name}.{table_name}
         WHERE p_event_time >= DATEADD(day, -7, CURRENT_TIMESTAMP())
-        LIMIT 10
+        LIMIT {limit}
         """
 
         result = await execute_data_lake_query(sql=sql, database_name=database_name)
