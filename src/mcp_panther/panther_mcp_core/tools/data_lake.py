@@ -158,7 +158,7 @@ async def execute_data_lake_query(
 
     All queries MUST:
     * Conform to Snowflake's SQL syntax.
-    * Contain a filter on `p_event_time`.
+    * Contain a filter on `p_event_time` except when querying `panther_lookups` exclusively.
 
     Guidance:
 
@@ -189,8 +189,11 @@ async def execute_data_lake_query(
 
     # Validate that the query includes a p_event_time filter after WHERE or AND
     sql_lower = sql.lower().replace("\n", " ")
-    if not re.search(
+    if (not re.search(
         r"\b(where|and)\s+.*?(?:[\w.]+\.)?p_event_time\s*(>=|<=|=|>|<|between)",
+        sql_lower,
+    )) and re.search(
+        r"\Wpanther_(views|signals|rule_matches|rule_errors|monitor|logs|cloudsecurity)\.",
         sql_lower,
     ):
         error_msg = (
