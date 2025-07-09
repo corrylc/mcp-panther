@@ -151,7 +151,6 @@ def main(transport: str, compat_mode: bool, port: int, host: str, log_file: str 
     if transport == "sse":
         # Create the Starlette app
         app = Starlette(
-            debug=True,
             routes=[
                 Mount("/", app=mcp.sse_app()),
             ],
@@ -159,7 +158,7 @@ def main(transport: str, compat_mode: bool, port: int, host: str, log_file: str 
 
         logger.info(f"Starting Panther MCP Server with SSE transport on {host}:{port}")
         # Use Uvicorn's Config and Server classes for more control
-        config = uvicorn.Config(app, host=host, port=port, timeout_graceful_shutdown=1)
+        config = uvicorn.Config(app, host=host, port=port, timeout_graceful_shutdown=1, workers=4)
         server = uvicorn.Server(config)
 
         # Override the default behavior
